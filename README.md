@@ -1,11 +1,12 @@
-#Ralphing by redog
+# Ralphing by redog
 
-##Forward Ralph Loops
+## Forward Ralph Loops
 
-##Reverse Ralph Loops
- ###Shapes
+## Reverse Ralph Loops
+ ### Shapes
 
-'''
+```
+
 state files:
   inventory.md     # every file/module/symbol, marked covered/uncovered
   spec.md          # the growing spec (the output)
@@ -19,5 +20,6 @@ loop (each iteration, fresh context):
   4. mark item covered in inventory.md
   5. if inference was uncertain -> append to questions.md, mark "covered-with-doubt"
   6. update progress.json
-'''
+
+```
 
