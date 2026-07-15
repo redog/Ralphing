@@ -44,10 +44,63 @@ ralph_agy() {
       | tee "logs/agy-run-$i-$(date +%s).txt"
     [ -s "logs/agy-run-$i-"*.txt ] || echo "WARN: empty output on run $i"
   done
-done
-
+}
 # If you want a hard stop condition instead of Ctrl-C, add a sentinel: 
 
 while [ ! -f STOP ]; do ... 
 
 then touch STOP from another terminal ends it after the current run finishes.
+# or traps!
+ralph_agy() {
+    local prompt_file="${1:-PROMPT_build.md}"
+    local i=0
+    local logfile
+    local runner_pid
+    local stop=0
+
+    [[ -r "$prompt_file" ]] || {
+        echo "Cannot read prompt file: $prompt_file" >&2
+        return 1
+    }
+
+    mkdir -p logs
+
+    trap '
+        stop=1
+        printf "\nStopping ralph_agy...\n" >&2
+
+        if [[ -n ${runner_pid:-} ]]; then
+            kill -TERM -- "-$runner_pid" 2>/dev/null
+            wait "$runner_pid" 2>/dev/null
+        fi
+    ' INT TERM
+
+    while (( ! stop )); do
+        ((++i))
+        logfile="logs/agy-run-${i}-$(date +%s).txt"
+
+        RALPH_PROMPT=$(<"$prompt_file")
+        export RALPH_PROMPT
+
+        setsid script -qefc \
+            'exec agy --dangerously-skip-permissions --print-timeout 20m -p "$RALPH_PROMPT"' \
+            /dev/null \
+            > >(tee "$logfile") &
+
+        runner_pid=$!
+        wait "$runner_pid"
+        status=$?
+        runner_pid=
+
+        [[ -s "$logfile" ]] ||
+            echo "WARN: empty output on run $i"
+
+        (( stop )) && break
+
+        echo "Run $i exited with status $status; restarting..."
+    done
+
+    trap - INT TERM
+    unset RALPH_PROMPT
+    return 130
+}
