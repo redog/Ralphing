@@ -22,4 +22,26 @@ loop (each iteration, fresh context):
   6. update progress.json
 
 ```
+ralph_claude() {
+  local prompt="${1:-PROMPT_build.md}"
+  local i=0
+  mkdir -p logs
+  while true; do
+    i=$((i+1))
+    claude --dangerously-skip-permissions -p "$(cat "$prompt")" \
+      --output-format stream-json --verbose \
+    | tee "logs/run-$i-$(date +%s).jsonl" \
+    | jq -r 'select(.type=="assistant") | .message.content[]? | .text // "→ \(.name) \(.input | tostring | .[0:120])"'
+  done
+}
 
+ralph_agy() {
+  local prompt="${1:-PROMPT_build.md}" i=0
+  mkdir -p logs
+  while true; do
+    i=$((i+1))
+    script -qec "agy --dangerously-skip-permissions --print-timeout 20m -p \"\$(cat $prompt)\"" /dev/null \
+      | tee "logs/agy-run-$i-$(date +%s).txt"
+    [ -s "logs/agy-run-$i-"*.txt ] || echo "WARN: empty output on run $i"
+  done
+done
