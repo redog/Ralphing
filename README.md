@@ -45,3 +45,9 @@ ralph_agy() {
     [ -s "logs/agy-run-$i-"*.txt ] || echo "WARN: empty output on run $i"
   done
 done
+
+# If you want a hard stop condition instead of Ctrl-C, add a sentinel: 
+
+while [ ! -f STOP ]; do ... 
+
+then touch STOP from another terminal ends it after the current run finishes.
