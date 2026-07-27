@@ -49,8 +49,12 @@ ralph_agy() {
 
 while [ ! -f STOP ]; do ... 
 
-then touch STOP from another terminal ends it after the current run finishes.
+  #then touch STOP from another terminal ends it after the current run finishes.
+
 # or traps!
+
+
+```
 ralph_agy() {
     local prompt_file="${1:-PROMPT_build.md}"
     local i=0
