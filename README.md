@@ -1,110 +1,76 @@
-# Ralphing by redog
+# Ralphing
 
-## Forward Ralph Loops
+Ralphing is a research and teaching project about disciplined iteration with AI.
+It begins with human-guided work: define the job, provide evidence, inspect the
+result, correct it, verify it, and retain what worked. At the advanced end, the
+same engineering principles support agentic Ralph loops that can plan, build,
+test, and document work over repeated fresh-context runs.
 
-## Reverse Ralph Loops
- ### Shapes
+Ralph loops are treated here as a serious engineering method. Effective loops
+externalize state, work in bounded increments, evaluate their own output, and
+make progress observable to a human operator. Autonomy is earned through
+specification, verification, containment, and experience.
 
-```
+## Choose a path
 
-state files:
-  inventory.md     # every file/module/symbol, marked covered/uncovered
-  spec.md          # the growing spec (the output)
-  questions.md     # things the model couldn't infer (the human/cloud queue)
-  progress.json    # iteration count, last-touched, coverage %
+| I want to... | Start here |
+| --- | --- |
+| Improve ordinary AI-assisted work | [Start here](docs/start-here.md) |
+| Coach a nontechnical team | [Sales and business development](docs/non-technical/sales-and-business-development.md) |
+| Compare major AI products | [Five-platform comparison session](docs/facilitator/model-comparison-session.md) |
+| Develop and rehearse coaching material | [Coach workspace](coach/README.md) |
+| Study or run autonomous loops | [Agentic Ralph loops](docs/technical/ralph-loops.md) |
+| Inspect the research behind the project | [Research archive](research/README.md) |
 
-loop (each iteration, fresh context):
-  1. read inventory.md, find highest-value UNCOVERED item
-  2. read that item's source (file, function, config)
-  3. write/extend the spec section it implies
-  4. mark item covered in inventory.md
-  5. if inference was uncertain -> append to questions.md, mark "covered-with-doubt"
-  6. update progress.json
+## The progression
 
-```
-ralph_claude() {
-  local prompt="${1:-PROMPT_build.md}"
-  local i=0
-  mkdir -p logs
-  while true; do
-    i=$((i+1))
-    claude --dangerously-skip-permissions -p "$(cat "$prompt")" \
-      --output-format stream-json --verbose \
-    | tee "logs/run-$i-$(date +%s).jsonl" \
-    | jq -r 'select(.type=="assistant") | .message.content[]? | .text // "→ \(.name) \(.input | tostring | .[0:120])"'
-  done
-}
+1. **Ask:** Express a useful job clearly enough that a person could evaluate it.
+2. **Inspect:** Compare the answer with the supplied evidence and desired result.
+3. **Refine:** Correct ambiguity, missing context, assumptions, and format.
+4. **Verify:** Check facts, calculations, citations, and acceptance criteria.
+5. **Reuse:** Save the successful request, inputs, rubric, and lessons learned.
+6. **Automate:** Only after the workflow is observable and repeatable, decide
+   whether part or all of the loop should operate autonomously.
 
-ralph_agy() {
-  local prompt="${1:-PROMPT_build.md}" i=0
-  mkdir -p logs
-  while true; do
-    i=$((i+1))
-    script -qec "agy --dangerously-skip-permissions --print-timeout 20m -p \"\$(cat $prompt)\"" /dev/null \
-      | tee "logs/agy-run-$i-$(date +%s).txt"
-    [ -s "logs/agy-run-$i-"*.txt ] || echo "WARN: empty output on run $i"
-  done
-}
-# If you want a hard stop condition instead of Ctrl-C, add a sentinel: 
+The early material is suitable for ordinary knowledge work. The autonomous
+material is for adventurous users and experienced operators who understand the
+consequences of unattended tools and unrestricted permissions.
 
-while [ ! -f STOP ]; do ... 
+## Provider comparison
 
-  #then touch STOP from another terminal ends it after the current run finishes.
+Workshops target five widely used product families:
 
-# or traps!
+- ChatGPT
+- Claude
+- Gemini
+- Grok
+- Microsoft Copilot
 
+The repository records the exact product, model, date, settings, and available
+tools for each run. Product names are stable teaching categories; individual
+model versions are experiment metadata, not permanent curriculum assumptions.
 
-```
-ralph_agy() {
-    local prompt_file="${1:-PROMPT_build.md}"
-    local i=0
-    local logfile
-    local runner_pid
-    local stop=0
+## Repository map
 
-    [[ -r "$prompt_file" ]] || {
-        echo "Cannot read prompt file: $prompt_file" >&2
-        return 1
-    }
+- `docs/` — learner, facilitator, and advanced technical guides
+- `workshops/` — repeatable sessions with shared inputs and evaluation criteria
+- `examples/` — synthetic, company-neutral fixtures and prompt progressions
+- `templates/` — reusable briefs, scorecards, and retrospectives
+- `coach/` — persistent state for developing the coaching program
+- `skills/` — skills for forward, reverse, and coaching-oriented loops
+- `tools/` — executable advanced loop runners
+- `research/` — source index and archived web extracts
 
-    mkdir -p logs
+## Public and company-neutral
 
-    trap '
-        stop=1
-        printf "\nStopping ralph_agy...\n" >&2
+This is a personal public project. Examples must be synthetic or safely
+anonymized and must not expose an employer, customer, employee, confidential
+process, or licensed dataset. Company-specific discoveries may inspire generic
+workflows, but the resulting examples must stand on their own.
 
-        if [[ -n ${runner_pid:-} ]]; then
-            kill -TERM -- "-$runner_pid" 2>/dev/null
-            wait "$runner_pid" 2>/dev/null
-        fi
-    ' INT TERM
+## Project status
 
-    while (( ! stop )); do
-        ((++i))
-        logfile="logs/agy-run-${i}-$(date +%s).txt"
+Active and experimental. The initial foundation is intentionally small enough
+to test in real coaching sessions. Results and facilitator observations should
+drive the next iteration.
 
-        RALPH_PROMPT=$(<"$prompt_file")
-        export RALPH_PROMPT
-
-        setsid script -qefc \
-            'exec agy --dangerously-skip-permissions --print-timeout 20m -p "$RALPH_PROMPT"' \
-            /dev/null \
-            > >(tee "$logfile") &
-
-        runner_pid=$!
-        wait "$runner_pid"
-        status=$?
-        runner_pid=
-
-        [[ -s "$logfile" ]] ||
-            echo "WARN: empty output on run $i"
-
-        (( stop )) && break
-
-        echo "Run $i exited with status $status; restarting..."
-    done
-
-    trap - INT TERM
-    unset RALPH_PROMPT
-    return 130
-}
