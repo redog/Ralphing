@@ -6,7 +6,24 @@
 - [x] Define the human-guided iteration model.
 - [x] Create an initial sales-data comparison workshop.
 - [x] Create a reusable comparison scorecard.
+- [x] Document coaching considerations using the human-as-temporary-harness model.
 - [ ] Validate all links and instructions from a clean checkout.
+
+## Coaching method
+
+- [x] Define the controls a coach temporarily supplies: objective, context,
+  constraints, tools, iteration cadence, evaluation, stop conditions, and
+  persistence.
+- [x] Document a scaffold progression from coach-led to learner-led work.
+- [x] Add guidance for changing one important variable at a time when teaching
+  cause and effect.
+- [x] Add explicit guidance against teaching prompt wording as magic.
+- [x] Connect coaching practice to later bounded and autonomous Ralph loops.
+- [ ] Add these observations to the coaching retrospective template.
+- [ ] Create a short facilitator exercise in which the learner must recover from
+  a plausible but unsupported first answer.
+- [ ] Create an exercise that contrasts model behavior with product-harness
+  differences such as tools, files, browsing, memory, and connectors.
 
 ## First comparison study
 
